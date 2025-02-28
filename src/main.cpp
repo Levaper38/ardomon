@@ -6,20 +6,32 @@
 
 LiquidCrystal_I2C lcd(0x27, 16, 2); // Указываем I2C адрес (наиболее распространенное значение), а также параметры экрана (в случае LCD 1602 - 2 строки по 16 символов в каждой
 
-Button btnNextScreen(3);
-Button btnOffScreen(5);
+Button btnNextScr(3);
+Button btnOffScr(5);
 
-int CurrentScreen = 0; //0 - cpu/ram; 1 - temperature
+int CurrentScr = 0; //0 - cpu/ram; 1 - temperature
 
 float percentCPU = 0.0;
 float percentMEM = 0.0;
 float tempCPU = 0.0;
+float networkUpload = 0.0;
+float networkDownload = 0.0;
+float diskRead = 0.0;
+float diskWrite = 0.0;
 
 String spaces_before_10 =  "     ";
 String spaces_before_100 = "    ";
 String spaces_equal_100 =  "   ";
 
 bool StateScreen = true;
+
+void ViewDataOnScreen(String firstString, String secondString){
+        lcd.clear();
+        lcd.setCursor(0,0);            // Установка курсора в начало первой строки
+        lcd.print(firstString);       // Набор текста на первой строке
+        lcd.setCursor(0, 1);             // Установка курсора в начало второй строки
+        lcd.print(secondString);       // Набор текста на второй строке
+    }
 
 String align_line(String currentString, float currentValue)
 {
@@ -36,31 +48,37 @@ String align_line(String currentString, float currentValue)
 
 void ChangeBackLightOnScreen()
 {
-  Serial.println("!");
   lcd.setBacklight(StateScreen);
   StateScreen = !StateScreen;
 }
 
-void UpdateScreen()
+void UpdateScreen() 
 {
-  if (CurrentScreen == 0) {
-    lcd.clear();
-
+  if (CurrentScr == 0) {
     String firstString = align_line("CPU", percentCPU) + "%";
     String secondString = align_line("MEM", percentMEM) + "%";
-
-    lcd.setCursor(0, 0);             // Установка курсора в начало первой строки
-    lcd.print(firstString);       // Набор текста на первой строке
-    lcd.setCursor(0, 1);             // Установка курсора в начало второй строки
-    lcd.print(secondString);       // Набор текста на второй строке
-  } else
-  {
-    lcd.clear();
+    ViewDataOnScreen(firstString,secondString);
+  } else if (CurrentScr == 1){
     String secondString = align_line(" ", tempCPU) + " C.";
-    lcd.setCursor(0, 0);             // Установка курсора в начало первой строки
-    lcd.print("      TEMP");       // Набор текста на первой строке
-    lcd.setCursor(0, 1);             // Установка курсора в начало второй строки
-    lcd.print(secondString);       // Набор текста на второй строке
+    ViewDataOnScreen("      TEMP",secondString);
+  }
+  
+  // else if (CurrentScr == 2){
+  //   String secondString = align_line(" ", tempCPU) + " C.";
+  //   ViewDataOnScreen("      TEMP",secondString); 
+  // }else if (CurrentScr == 3){
+    
+  // }else if (CurrentScr == 1){
+    
+  // }
+}
+void WaitScreen(){
+    CurrentScr = 0;
+}
+void NextScreen(){
+  CurrentScr++;
+  if(CurrentScr >1){
+    CurrentScr = 0;
   }
 }
 
@@ -76,19 +94,15 @@ void setup()
 
 void loop()
 {
-  btnNextScreen.process_button();
-  btnOffScreen.process_button();
+  btnNextScr.process_button();
+  btnOffScr.process_button();
 
-  if(btnNextScreen.is_clicked()){
-    if (CurrentScreen == 0) {
-      CurrentScreen = 1;
-    } else {
-      CurrentScreen = 0;
-    }
+  if(btnNextScr.is_clicked()){
+    NextScreen();
     UpdateScreen();
   }
 
-  if(btnOffScreen.is_clicked()){
+  if(btnOffScr.is_clicked()){
     ChangeBackLightOnScreen();
   }
 
@@ -96,8 +110,6 @@ void loop()
     String val = Serial.readString();
     Serial.println(val);
     //003.10041.70039.00
-    // char currentFlag = val[0];
-    // float currentValue = val.substring(1).toFloat();
 
     percentCPU = val.substring(0,5).toFloat();
     percentMEM = val.substring(6,11).toFloat();
