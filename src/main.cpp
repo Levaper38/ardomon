@@ -9,41 +9,34 @@ LiquidCrystal_I2C lcd(0x27, 16, 2); // Указываем I2C адрес (наи
 Button btnNextScr(3);
 Button btnOffScr(5);
 
-int CurrentScr = 0; //0 - cpu/ram; 1 - temperature
+int CurrentScr = 0; // 0 - cpu/ram; 1 - temperature
 
 float percentCPU = 0.0;
 float percentMEM = 0.0;
 float tempCPU = 0.0;
-float networkUpload = 0.0;
-float networkDownload = 0.0;
-float diskRead = 0.0;
-float diskWrite = 0.0;
+float netU = 0.0;
+float netD = 0.0;
+float diskR = 0.0;
+float diskW = 0.0;
 
-String spaces_before_10 =  "     ";
-String spaces_before_100 = "    ";
-String spaces_equal_100 =  "   ";
+String templMBc = "Mb/c";
 
 bool StateScreen = true;
 
-void ViewDataOnScreen(String firstString, String secondString){
-        lcd.clear();
-        lcd.setCursor(0,0);            // Установка курсора в начало первой строки
-        lcd.print(firstString);       // Набор текста на первой строке
-        lcd.setCursor(0, 1);             // Установка курсора в начало второй строки
-        lcd.print(secondString);       // Набор текста на второй строке
-    }
-
-String align_line(String currentString, float currentValue)
+void ViewStringOnScreen(int numberString, String stringBegin, String stringEnd)
 {
-  String resultString = currentString;
-  if (currentValue < 10) {
-    resultString += spaces_before_10 + String(currentValue);
-  } else if (currentValue < 100) {
-    resultString += spaces_before_100 + String(currentValue);
-  } else {
-    resultString += spaces_equal_100 + String(currentValue);
-  }
-  return resultString;
+  lcd.setCursor(0, numberString);         
+  lcd.print(stringBegin); 
+  int cursorPos = 16 - stringEnd.length();
+  lcd.setCursor(cursorPos, numberString);
+  lcd.print(stringEnd);
+}
+
+void ViewDataOnScreen(String firstStringBegin, String firstStringEnd, String secondStringBegin, String secondStringEnd)
+{
+  lcd.clear();
+  ViewStringOnScreen(0, firstStringBegin,firstStringEnd);
+  ViewStringOnScreen(1, secondStringBegin,secondStringEnd);
 }
 
 void ChangeBackLightOnScreen()
@@ -52,32 +45,50 @@ void ChangeBackLightOnScreen()
   StateScreen = !StateScreen;
 }
 
-void UpdateScreen() 
+void UpdateScreen()
 {
-  if (CurrentScr == 0) {
-    String firstString = align_line("CPU", percentCPU) + "%";
-    String secondString = align_line("MEM", percentMEM) + "%";
-    ViewDataOnScreen(firstString,secondString);
-  } else if (CurrentScr == 1){
-    String secondString = align_line(" ", tempCPU) + " C.";
-    ViewDataOnScreen("      TEMP",secondString);
+  String firstStringBegin,firstStringEnd = "";
+  String secondStringBegin, secondStringEnd = "";
+
+  if (CurrentScr == 0)
+  {
+    firstStringBegin = "CPU";
+    firstStringEnd = String(percentCPU) + "%";
+    secondStringBegin = "MEM";
+    secondStringEnd = String(percentMEM) + "%";
   }
-  
-  // else if (CurrentScr == 2){
-  //   String secondString = align_line(" ", tempCPU) + " C.";
-  //   ViewDataOnScreen("      TEMP",secondString); 
-  // }else if (CurrentScr == 3){
-    
-  // }else if (CurrentScr == 1){
-    
-  // }
+  else if (CurrentScr == 1)
+  {
+    firstStringBegin = "      TEMP";
+    firstStringEnd = " ";
+    secondStringBegin = "  ";
+    secondStringEnd = String(tempCPU) + " C.    ";
+  }
+  else if (CurrentScr == 2)
+  {
+    firstStringBegin = "NetU";
+    firstStringEnd = String(netU) + templMBc;
+    secondStringBegin = "NetD";
+    secondStringEnd = String(netD) + templMBc;
+  }
+  else if (CurrentScr == 3)
+  {
+    firstStringBegin = "DiskR";
+    firstStringEnd = String(diskR) + templMBc;
+    secondStringBegin = "DiskW";
+    secondStringEnd = String(diskW) + templMBc;
+  }
+  ViewDataOnScreen(firstStringBegin,firstStringEnd, secondStringBegin,secondStringEnd);
 }
-void WaitScreen(){
-    CurrentScr = 0;
+void WaitScreen()
+{
+  CurrentScr = 0;
 }
-void NextScreen(){
+void NextScreen()
+{
   CurrentScr++;
-  if(CurrentScr >1){
+  if (CurrentScr > 3)
+  {
     CurrentScr = 0;
   }
 }
@@ -87,9 +98,9 @@ void setup()
   Serial.begin(9600);
   Serial.setTimeout(100);
 
-  lcd.init();                      // Инициализация дисплея
-  ChangeBackLightOnScreen();       // Подключение подсветки
-  UpdateScreen();
+  lcd.init();                // Инициализация дисплея
+  ChangeBackLightOnScreen(); // Подключение подсветки
+  //UpdateScreen();
 }
 
 void loop()
@@ -97,26 +108,33 @@ void loop()
   btnNextScr.process_button();
   btnOffScr.process_button();
 
-  if(btnNextScr.is_clicked()){
+  if (btnNextScr.is_clicked())
+  {
     NextScreen();
     UpdateScreen();
   }
 
-  if(btnOffScr.is_clicked()){
+  if (btnOffScr.is_clicked())
+  {
     ChangeBackLightOnScreen();
   }
 
-  if (Serial.available()) {
+  if (Serial.available())
+  {
     String val = Serial.readString();
     Serial.println(val);
-    //003.10041.70039.00
-
-    percentCPU = val.substring(0,5).toFloat();
-    percentMEM = val.substring(6,11).toFloat();
-    tempCPU = val.substring(12).toFloat();
+    // 003.10041.70039.00
+    // CPU%  + MEM% + TEMP + NetU + NetD +DiskR+DiskW
+    // 003.10_041.70_039.00_008.21_001.25_045.23_055.17
+    // 103.12241.71339.23248.21501.25645.23755.17
+    percentCPU = val.substring(0, 6).toFloat();
+    percentMEM = val.substring(6, 12).toFloat();
+    tempCPU = val.substring(12,18).toFloat();
+    netU = val.substring(18,24).toFloat();
+    netD = val.substring(24,30).toFloat();
+    diskR = val.substring(30,36).toFloat();
+    diskW = val.substring(36).toFloat();
 
     UpdateScreen();
   }
 }
-
-
