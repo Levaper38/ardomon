@@ -23,6 +23,8 @@ String templMBc = "Mb/c";
 
 bool StateScreen = true;
 
+uint32_t toneTimer = 0;
+
 void ViewStringOnScreen(int numberString, String stringBegin, String stringEnd)
 {
   lcd.setCursor(0, numberString);         
@@ -137,4 +139,12 @@ void loop()
 
     UpdateScreen();
   }
+
+  if(tempCPU > 70 && millis() - toneTimer > 2000)
+  {
+    tone(11, 523, 600);
+    toneTimer = millis();
+    
+  }
+
 }
