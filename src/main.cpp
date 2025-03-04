@@ -9,7 +9,7 @@ LiquidCrystal_I2C lcd(0x27, 16, 2); // Указываем I2C адрес (наи
 Button btnNextScr(3);
 Button btnOffScr(5);
 
-int CurrentScr = 0; // 0 - cpu/ram; 1 - temperature
+int CurrentScr = 0; // 0 - cpu/ram; 1 - temperature; 2 - network speed; 3 - disk speed
 
 float percentCPU = 0.0;
 float percentMEM = 0.0;
@@ -102,7 +102,6 @@ void setup()
 
   lcd.init();                // Инициализация дисплея
   ChangeBackLightOnScreen(); // Подключение подсветки
-  //UpdateScreen();
 }
 
 void loop()
@@ -124,11 +123,9 @@ void loop()
   if (Serial.available())
   {
     String val = Serial.readString();
-    Serial.println(val);
-    // 003.10041.70039.00
     // CPU%  + MEM% + TEMP + NetU + NetD +DiskR+DiskW
     // 003.10_041.70_039.00_008.21_001.25_045.23_055.17
-    // 103.12241.71339.23248.21501.25645.23755.17
+    // 103.12241.71039.23248.21501.25645.23755.17
     percentCPU = val.substring(0, 6).toFloat();
     percentMEM = val.substring(6, 12).toFloat();
     tempCPU = val.substring(12,18).toFloat();
@@ -140,9 +137,9 @@ void loop()
     UpdateScreen();
   }
 
-  if(tempCPU > 70 && millis() - toneTimer > 2000)
+  if(tempCPU > 64.5 && millis() - toneTimer > 2000)
   {
-    tone(11, 523, 600);
+    tone(8, 523, 600);
     toneTimer = millis();
     
   }
