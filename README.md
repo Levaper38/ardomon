@@ -14,3 +14,14 @@
 
 Делалось для себя, ради эксперимента. Без претензий на совершенство.
 
+Экран загрузки процессора и памяти:
+![IMG_20250318_185011](https://github.com/user-attachments/assets/2f6eb2bf-6377-4a88-ab0d-ad491c170998)
+
+Экран отображения температуры:
+![IMG_20250318_185025](https://github.com/user-attachments/assets/dd965a9f-5673-456d-b3e4-75c76728125f)
+
+Экран отображения нагрузки на сеть:
+![IMG_20250318_185050](https://github.com/user-attachments/assets/5a8cb593-a6ef-47df-982c-8757ad0a273d)
+
+Экран отображения нагрузки на диски:
+![IMG_20250318_185055](https://github.com/user-attachments/assets/3fb3f990-59a5-49fb-82d1-cb0315ada628)
